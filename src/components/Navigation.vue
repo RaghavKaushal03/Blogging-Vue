@@ -1,64 +1,129 @@
 <template>
   <header>
-      <nav class="container">
-          <div class="branding">
-              <router-link class="header" :to="{name: 'Home'}">FireBlogs</router-link>
+    <nav class="container">
+      <div class="branding">
+        <router-link class="header" :to="{ name: 'Home' }">FireBlogs</router-link>
+      </div>
+      <div class="nav-links">
+        <ul v-show="!mobile">
+          <router-link class="link" :to="{ name: 'Home' }">Home</router-link>
+          <router-link class="link" :to="{ name: 'Blogs' }">Blogs</router-link>
+          <router-link v-if="admin" class="link" :to="{ name: 'CreatePost' }">Create Post</router-link>
+          <router-link v-if="!user" class="link" :to="{ name: 'Login' }">Login/Register</router-link>
+        </ul>
+        <div
+          v-if="user"
+          :class="{ 'mobile-user-menu': mobile }"
+          @click="toggleProfileMenu"
+          class="profile"
+          ref="profile"
+        >
+          <span>{{ this.$store.state.profileInitials }}</span>
+          <div v-show="profileMenu" class="profile-menu">
+            <div class="info">
+              <p class="initials">{{ this.$store.state.profileInitials }}</p>
+              <div class="right">
+                <p>
+                  {{ this.$store.state.profileFirstName }}
+                  {{ this.$store.state.profileLastName }}
+                </p>
+                <p>{{ this.$store.state.profileUsername }}</p>
+                <p>{{ this.$store.state.profileEmail }}</p>
+              </div>
+            </div>
+            <div class="options">
+              <div class="option">
+                <router-link class="option" :to="{ name: 'Profile' }">
+                  <userIcon class="icon" />
+                  <p>Profile</p>
+                </router-link>
+              </div>
+              <div v-if="admin" class="option">
+                <router-link class="option" :to="{ name: 'Admin' }">
+                  <adminIcon class="icon" />
+                  <p>Admin</p>
+                </router-link>
+              </div>
+              <div @click="signOut" class="option">
+                <signOutIcon class="icon" />
+                <p>Sign Out</p>
+              </div>
+            </div>
           </div>
-          <div class="nav-links">
-              <ul v-show="!mobile">
-                  <router-link class="link" :to="{name: 'Home'}">Home</router-link>
-                  <router-link class="link" :to="{name: 'Blogs'}">Blogs</router-link>
-                  <router-link class="link" to="#">Create Post</router-link>
-                  <router-link class="link" :to="{name: 'Login'}">Login/Register</router-link>
-              </ul>
-          </div>
-      </nav>
-    <menuIcon @click="toggleMobileNav" class="menu-icon" v-show="mobile"/>
+        </div>
+      </div>
+    </nav>
+    <menuIcon @click="toggleMobileNav" class="menu-icon" v-show="mobile" />
     <transition name="mobile-nav">
-            <ul class="mobile-nav" v-show="mobileNav">
-                <router-link class="link" :to="{name: 'Home'}">Home</router-link>
-                <router-link class="link" :to="{name: 'Blogs'}">Blogs</router-link>
-                <router-link class="link" to="#">Create Post</router-link>
-                <router-link class="link" :to="{name: 'Login'}">Login/Register</router-link>
-            </ul>
+      <ul class="mobile-nav" v-show="mobileNav">
+        <router-link class="link" :to="{ name: 'Home' }">Home</router-link>
+        <router-link class="link" :to="{ name: 'Blogs' }">Blogs</router-link>
+        <router-link v-if="admin" class="link" :to="{ name: 'CreatePost' }">Create Post</router-link>
+        <router-link v-if="!user" class="link" :to="{ name: 'Login' }">Login/Register</router-link>
+      </ul>
     </transition>
   </header>
 </template>
 
 <script>
-import menuIcon from '../assets/Icons/bars-regular.svg';
+import menuIcon from "../assets/Icons/bars-regular.svg";
+import userIcon from "../assets/Icons/user-alt-light.svg";
+import adminIcon from "../assets/Icons/user-crown-light.svg";
+import signOutIcon from "../assets/Icons/sign-out-alt-regular.svg";
+import firebase from "firebase/app";
+import "firebase/auth";
 export default {
-    name: 'navigation',
-    components: {
-        menuIcon
+  name: "navigation",
+  components: {
+    menuIcon,
+    userIcon,
+    adminIcon,
+    signOutIcon,
+  },
+  data() {
+    return {
+      profileMenu: null,
+      mobile: null,
+      mobileNav: null,
+      windownWidth: null,
+    };
+  },
+  created() {
+    window.addEventListener("resize", this.checkScreen);
+    this.checkScreen();
+  },
+  methods: {
+    checkScreen() {
+      this.windownWidth = window.innerWidth;
+      if (this.windownWidth <= 750) {
+        this.mobile = true;
+        return;
+      }
+      this.mobile = false;
+      this.mobileNav = false;
+      return;
     },
-    data() {
-        return {
-            mobile: null,
-            mobileNav: null,
-            windowWidth: null,
-        };
+    toggleMobileNav() {
+      this.mobileNav = !this.mobileNav;
     },
-    created(){
-        window.addEventListener('resize',this.checkScreen);
-        this.checkScreen();
+    toggleProfileMenu(e) {
+      if (e.target === this.$refs.profile) {
+        this.profileMenu = !this.profileMenu;
+      }
     },
-    methods:{
-        checkScreen(){
-            this.windowWidth = window.innerWidth;
-            if(this.windowWidth <= 750){
-                this.mobile=true;
-                return;
-            }
-            this.mobile = false;
-            this.mobileNav = false;
-            return;
-        },
-
-        toggleMobileNav(){
-            this.mobileNav = !this.mobileNav;
-        }
+    signOut() {
+      firebase.auth().signOut();
+      window.location.reload();
     },
+  },
+  computed: {
+    user() {
+      return this.$store.state.user;
+    },
+    admin() {
+      return this.$store.state.profileAdmin;
+    },
+  },
 };
 </script>
 
@@ -66,7 +131,8 @@ export default {
 header {
   background-color: #fff;
   padding: 0 25px;
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1),
+    0 2px 4px -1px rgba(0, 0, 0, 0.06);
   z-index: 99;
   .link {
     font-weight: 500;
@@ -124,7 +190,8 @@ header {
           right: 0;
           width: 250px;
           background-color: #303030;
-          box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+          box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1),
+            0 2px 4px -1px rgba(0, 0, 0, 0.06);
           .info {
             display: flex;
             align-items: center;
